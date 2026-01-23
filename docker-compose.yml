@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  # PostgreSQL database (Azure SQL equivalent for local development)
+  postgres:
+    image: postgres:15-alpine
+    container_name: pronielts-postgres
+    environment:
+      POSTGRES_USER: pronielts
+      POSTGRES_PASSWORD: pronielts
+      POSTGRES_DB: pronielts
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pronielts"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MinIO (S3-compatible storage for Azure Blob Storage mock)
+  minio:
+    image: minio/minio:latest
+    container_name: pronielts-minio
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+volumes:
+  postgres_data:
+  minio_data:
+
+networks:
+  default:
+    name: pronielts-network
