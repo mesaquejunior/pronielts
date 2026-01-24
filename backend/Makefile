@@ -1,4 +1,4 @@
-.PHONY: linter linter-check mypy install test help
+.PHONY: linter linter-check mypy install test coverage help
 
 # Default target
 help:
@@ -8,6 +8,7 @@ help:
 	@echo "  mypy          - Run type checking with mypy"
 	@echo "  install       - Install dependencies with Poetry"
 	@echo "  test          - Run tests with pytest"
+	@echo "  coverage      - Run tests with coverage report"
 
 # Install dependencies
 install:
@@ -45,3 +46,8 @@ mypy:
 # Run tests
 test:
 	poetry run pytest
+
+# Run tests with coverage report
+coverage:
+	poetry run pytest --cov=app --cov-report=term-missing --cov-report=html
+	@echo "\n✅ Coverage report generated at htmlcov/index.html"

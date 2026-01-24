@@ -18,7 +18,7 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 
-@router.get("/users/{user_id}/assessments", response_model=list[AssessmentListItem])
+@router.get("/{user_id}/assessments", response_model=list[AssessmentListItem])
 def get_user_assessments(
     user_id: int,
     limit: int = Query(50, ge=1, le=100),
@@ -64,7 +64,7 @@ def get_user_assessments(
     return result
 
 
-@router.get("/users/{user_id}/progress", response_model=UserProgress)
+@router.get("/{user_id}/progress", response_model=UserProgress)
 def get_user_progress(user_id: int, db: Session = Depends(get_db)):
     """
     Get aggregated progress statistics for a user.

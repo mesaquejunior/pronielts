@@ -7,6 +7,7 @@ import logging
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from app.api.v1.api import api_router
 from app.core.config import settings
@@ -97,14 +98,20 @@ async def shutdown_event():
 @app.exception_handler(404)
 async def not_found_handler(request, exc):
     """Custom 404 handler."""
-    return {"detail": "Resource not found", "status_code": 404}
+    return JSONResponse(
+        status_code=404,
+        content={"detail": "Resource not found"},
+    )
 
 
 @app.exception_handler(500)
 async def internal_error_handler(request, exc):
     """Custom 500 handler."""
     logger.error(f"Internal server error: {str(exc)}", exc_info=True)
-    return {"detail": "Internal server error. Please try again later.", "status_code": 500}
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error. Please try again later."},
+    )
 
 
 if __name__ == "__main__":
