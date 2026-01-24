@@ -25,24 +25,40 @@ passlib = {extras = ["bcrypt"], version = "^1.7.4"}
 httpx = "^0.26.0"
 email-validator = "^2.3.0"
 
-[tool.poetry.group.dev.dependencies]
+[tool.poetry.group.lint]
+optional = true
+
+[tool.poetry.group.lint.dependencies]
+# Linting and code quality tools
+mypy = "^1.13.0"
+ruff = "^0.8.5"
+black = "^24.1.1"
+isort = "^5.13.2"
+pylint = "^3.0.3"
+deptry = "^0.20.0"
+
+[tool.poetry.group.test]
+optional = true
+
+[tool.poetry.group.test.dependencies]
+# Testing dependencies
 pytest = "^7.4.4"
 pytest-asyncio = "^0.23.3"
 pytest-cov = "^4.1.0"
 pytest-mock = "^3.12.0"
-black = "^24.1.1"
-pylint = "^3.0.3"
 faker = "^22.0.0"
+
+[tool.poetry.group.dev.dependencies]
+# Development utilities
 ipython = "^8.20.0"
-isort = "^5.13.2"
-ruff = "^0.8.5"
-mypy = "^1.13.0"
-deptry = "^0.20.0"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
+# ============================================================================
+# Black - Code Formatter
+# ============================================================================
 [tool.black]
 line-length = 100
 target-version = ['py313']
@@ -62,22 +78,9 @@ exclude = '''
 )/
 '''
 
-[tool.pylint.messages_control]
-max-line-length = 100
-disable = ["C0111", "C0103", "R0903"]
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-python_files = ["test_*.py"]
-python_classes = ["Test*"]
-python_functions = ["test_*"]
-addopts = "-v --tb=short --strict-markers"
-markers = [
-    "unit: Unit tests",
-    "integration: Integration tests",
-    "slow: Slow tests",
-]
-
+# ============================================================================
+# isort - Import Sorting
+# ============================================================================
 [tool.isort]
 profile = "black"
 line_length = 100
@@ -85,6 +88,9 @@ skip_gitignore = true
 known_first_party = ["app"]
 sections = ["FUTURE", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
 
+# ============================================================================
+# Ruff - Fast Python Linter
+# ============================================================================
 [tool.ruff]
 line-length = 100
 target-version = "py313"
@@ -99,23 +105,48 @@ exclude = [
 
 [tool.ruff.lint]
 select = [
-    "E",  # pycodestyle errors
-    "W",  # pycodestyle warnings
-    "F",  # pyflakes
-    "I",  # isort
-    "B",  # flake8-bugbear
-    "C4", # flake8-comprehensions
-    "UP", # pyupgrade
-]
-ignore = [
-    "E501", # line too long (handled by black)
-    "B008", # do not perform function calls in argument defaults
-    "B904", # raise from exception (can be enabled later for better error handling)
-    "C416", # unnecessary dict comprehension
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "I",    # isort
+    "B",    # flake8-bugbear
+    "C4",   # flake8-comprehensions
+    "UP",   # pyupgrade
+    "N",    # pep8-naming
+    "T20",  # flake8-print
+    "Q",    # flake8-quotes
+    "S",    # flake8-bandit (security)
+    "PIE",  # flake8-pie
+    "SIM",  # flake8-simplify
+    "C90",  # mccabe (complexity)
 ]
 
+ignore = [
+    "E501",   # line too long (handled by black)
+    "B008",   # do not perform function calls in argument defaults
+    "B904",   # raise from exception (can be enabled later)
+    "C416",   # unnecessary dict comprehension
+    "S101",   # use of assert detected (needed for tests)
+    "S104",   # possible binding to all interfaces
+    "S105",   # possible hardcoded password
+    "S106",   # possible hardcoded password
+    "S107",   # possible hardcoded password
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S101", "S105", "S106"]  # Allow asserts and test credentials in tests
+"alembic/*" = ["T20"]  # Allow print in migrations
+"app/services/speech_service.py" = ["S311"]  # Mock service uses random for fake data
+
+# ============================================================================
+# MyPy - Static Type Checker
+# ============================================================================
 [tool.mypy]
 python_version = "3.13"
+plugins = ["pydantic.mypy"]
+exclude = ["alembic/versions/", "tests/"]
+
+# Start with lenient settings, gradually increase strictness
 warn_return_any = false
 warn_unused_configs = true
 disallow_untyped_defs = false
@@ -128,18 +159,71 @@ warn_unused_ignores = false
 warn_no_return = false
 follow_imports = "normal"
 ignore_missing_imports = true
-exclude = ["alembic/versions/", "tests/"]
-# Start with lenient settings, gradually increase strictness
 
+# Pydantic plugin settings
+[tool.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true
+warn_required_dynamic_aliases = true
+
+# ============================================================================
+# Pylint
+# ============================================================================
+[tool.pylint.messages_control]
+max-line-length = 100
+disable = [
+    "C0111",  # missing-docstring
+    "C0103",  # invalid-name
+    "R0903",  # too-few-public-methods
+]
+
+# ============================================================================
+# Pytest - Test Framework
+# ============================================================================
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short --strict-markers"
+markers = [
+    "unit: Unit tests",
+    "integration: Integration tests",
+    "slow: Slow tests",
+]
+
+[tool.coverage.run]
+omit = ["*tests*", "alembic/versions/*"]
+
+# ============================================================================
+# Deptry - Dependency Checker
+# ============================================================================
 [tool.deptry]
 exclude = ["tests", "alembic"]
-# Ignore specific dependencies that will be used in future features or are loaded dynamically
-per_rule_ignores = { DEP002 = [
-    "alembic",  # Database migrations (used via CLI)
-    "psycopg2-binary",  # PostgreSQL driver (loaded by SQLAlchemy)
+known_first_party = ["app"]
+
+[tool.deptry.per_rule_ignores]
+# DEP001: Missing dependencies (imported but not in dependencies)
+DEP001 = [
+    "pytest",
+    "faker",
+    "mypy",
+    "ruff",
+    "black",
+    "isort",
+    "pylint",
+    "deptry",
+]
+
+# DEP002: Unused dependencies (in dependencies but not imported)
+DEP002 = [
+    "alembic",           # Database migrations (used via CLI)
+    "psycopg2-binary",   # PostgreSQL driver (loaded by SQLAlchemy)
     "python-multipart",  # File upload support (used by FastAPI)
-    "python-jose",  # JWT tokens (future auth feature)
-    "passlib",  # Password hashing (future auth feature)
-    "httpx",  # Async HTTP client (future feature)
-    "email-validator",  # Email validation (future feature)
-]}
+    "python-jose",       # JWT tokens (future auth feature)
+    "passlib",           # Password hashing (future auth feature)
+    "email-validator",   # Email validation (future feature)
+    "httpx",             # Async HTTP client (future feature)
+    "pytest",            # Testing framework (in test group)
+    "faker",             # Test data generation (in test group)
+]

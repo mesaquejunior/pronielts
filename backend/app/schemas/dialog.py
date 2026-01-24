@@ -35,8 +35,6 @@ class DialogBase(BaseModel):
 class DialogCreate(DialogBase):
     """Schema for creating a new dialog."""
 
-    pass
-
 
 class DialogUpdate(BaseModel):
     """Schema for updating a dialog (all fields optional)."""
