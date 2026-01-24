@@ -2,9 +2,11 @@
 Speech assessment service using Azure Cognitive Services Speech SDK.
 Supports both mock mode (for local development) and real Azure mode.
 """
-import random
+
 import logging
-from typing import Dict, Any
+import random
+from typing import Any
+
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
@@ -12,6 +14,7 @@ logger = logging.getLogger(__name__)
 # Azure Speech SDK import (optional, only needed when MOCK_MODE=false)
 try:
     import azure.cognitiveservices.speech as speechsdk
+
     AZURE_SDK_AVAILABLE = True
 except ImportError:
     AZURE_SDK_AVAILABLE = False
@@ -28,7 +31,7 @@ class PronunciationResult:
         fluency: float,
         completeness: float,
         recognized_text: str,
-        word_scores: Dict[str, Any]
+        word_scores: dict[str, Any],
     ):
         self.accuracy_score = accuracy
         self.prosody_score = prosody
@@ -56,9 +59,7 @@ class SpeechAssessmentService:
             )
 
     async def assess_pronunciation(
-        self,
-        audio_bytes: bytes,
-        reference_text: str
+        self, audio_bytes: bytes, reference_text: str
     ) -> PronunciationResult:
         """
         Assess pronunciation from audio bytes.
@@ -91,18 +92,11 @@ class SpeechAssessmentService:
         for word in words:
             # Randomize accuracy for each word (70-100%)
             accuracy = random.uniform(70, 100)
-            error_type = random.choice([
-                "None",
-                "None",
-                "None",  # Most words correct
-                "Mispronunciation",
-                "Omission"
-            ])
+            error_type = random.choice(
+                ["None", "None", "None", "Mispronunciation", "Omission"]  # Most words correct
+            )
 
-            word_scores[word] = {
-                "accuracy": round(accuracy, 1),
-                "error_type": error_type
-            }
+            word_scores[word] = {"accuracy": round(accuracy, 1), "error_type": error_type}
 
         # Generate overall scores with some variation
         accuracy = random.uniform(75, 95)
@@ -116,13 +110,11 @@ class SpeechAssessmentService:
             fluency=fluency,
             completeness=completeness,
             recognized_text=reference_text,  # Mock: return same text
-            word_scores=word_scores
+            word_scores=word_scores,
         )
 
     async def _azure_assessment(
-        self,
-        audio_bytes: bytes,
-        reference_text: str
+        self, audio_bytes: bytes, reference_text: str
     ) -> PronunciationResult:
         """
         Perform real pronunciation assessment using Azure Speech SDK.
@@ -132,8 +124,7 @@ class SpeechAssessmentService:
         try:
             # Configure Speech SDK
             speech_config = speechsdk.SpeechConfig(
-                subscription=settings.SPEECH_KEY,
-                region=settings.SPEECH_REGION
+                subscription=settings.SPEECH_KEY, region=settings.SPEECH_REGION
             )
 
             # Configure pronunciation assessment
@@ -141,7 +132,7 @@ class SpeechAssessmentService:
                 reference_text=reference_text,
                 grading_system=speechsdk.PronunciationAssessmentGradingSystem.HundredMark,
                 granularity=speechsdk.PronunciationAssessmentGranularity.Phoneme,
-                enable_miscue=True
+                enable_miscue=True,
             )
 
             # Enable prosody assessment
@@ -156,8 +147,7 @@ class SpeechAssessmentService:
 
             # Create recognizer and apply pronunciation config
             recognizer = speechsdk.SpeechRecognizer(
-                speech_config=speech_config,
-                audio_config=audio_config
+                speech_config=speech_config, audio_config=audio_config
             )
             pron_config.apply_to(recognizer)
 
@@ -177,7 +167,7 @@ class SpeechAssessmentService:
                     fluency=pron_result.fluency_score,
                     completeness=pron_result.completeness_score,
                     recognized_text=result.text,
-                    word_scores=word_scores
+                    word_scores=word_scores,
                 )
             elif result.reason == speechsdk.ResultReason.NoMatch:
                 raise Exception("No speech could be recognized from the audio")
@@ -191,7 +181,7 @@ class SpeechAssessmentService:
             logger.error(f"Azure speech assessment failed: {str(e)}")
             raise Exception(f"Speech assessment failed: {str(e)}")
 
-    def _extract_word_scores(self, result: Any) -> Dict[str, Any]:
+    def _extract_word_scores(self, result: Any) -> dict[str, Any]:
         """
         Extract word-level scores from Azure Speech SDK result.
 
@@ -202,9 +192,10 @@ class SpeechAssessmentService:
         try:
             # Parse JSON result for detailed word scores
             import json
-            result_json = json.loads(result.properties.get(
-                speechsdk.PropertyId.SpeechServiceResponse_JsonResult
-            ))
+
+            result_json = json.loads(
+                result.properties.get(speechsdk.PropertyId.SpeechServiceResponse_JsonResult)
+            )
 
             if "NBest" in result_json and len(result_json["NBest"]) > 0:
                 words = result_json["NBest"][0].get("Words", [])
@@ -212,12 +203,11 @@ class SpeechAssessmentService:
                 for word_info in words:
                     word = word_info.get("Word", "")
                     accuracy = word_info.get("PronunciationAssessment", {}).get("AccuracyScore", 0)
-                    error_type = word_info.get("PronunciationAssessment", {}).get("ErrorType", "None")
+                    error_type = word_info.get("PronunciationAssessment", {}).get(
+                        "ErrorType", "None"
+                    )
 
-                    word_scores[word] = {
-                        "accuracy": accuracy,
-                        "error_type": error_type
-                    }
+                    word_scores[word] = {"accuracy": accuracy, "error_type": error_type}
         except Exception as e:
             logger.warning(f"Could not extract word-level scores: {str(e)}")
 

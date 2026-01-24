@@ -2,8 +2,11 @@
 Encryption service for securing audio files before storage.
 Uses Fernet (symmetric encryption) with AES-256.
 """
+
 import logging
+
 from cryptography.fernet import Fernet, InvalidToken
+
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
@@ -25,8 +28,8 @@ class EncryptionService:
             self.cipher = Fernet(settings.ENCRYPTION_KEY.encode())
         except Exception as e:
             raise ValueError(
-                f"Invalid ENCRYPTION_KEY in settings. "
-                f"Generate a valid key with: python -c 'from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())'"
+                "Invalid ENCRYPTION_KEY in settings. "
+                "Generate a valid key with: python -c 'from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())'"
             ) from e
 
     def encrypt_audio(self, audio_bytes: bytes) -> bytes:

@@ -2,12 +2,14 @@
 API dependencies for dependency injection.
 Provides database sessions and service instances to endpoints.
 """
-from fastapi import Depends
-from sqlalchemy.orm import Session
+
 from app.db.session import get_db
-from app.services.speech_service import SpeechAssessmentService
 from app.services.blob_service import BlobStorageService
 from app.services.encryption_service import EncryptionService
+from app.services.speech_service import SpeechAssessmentService
+
+# Re-export get_db for convenience
+__all__ = ["get_db", "get_speech_service", "get_blob_service", "get_encryption_service"]
 
 
 def get_speech_service() -> SpeechAssessmentService:

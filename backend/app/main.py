@@ -2,16 +2,18 @@
 Main FastAPI application.
 Entry point for the PronIELTS backend API.
 """
+
 import logging
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.core.config import settings
+
 from app.api.v1.api import api_router
+from app.core.config import settings
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
@@ -22,7 +24,7 @@ app = FastAPI(
     description="IELTS Pronunciation Assessment Platform API",
     openapi_url=f"{settings.API_V1_STR}/openapi.json",
     docs_url="/docs",
-    redoc_url="/redoc"
+    redoc_url="/redoc",
 )
 
 # Configure CORS
@@ -49,7 +51,7 @@ def health_check():
         "status": "healthy",
         "version": settings.VERSION,
         "project": settings.PROJECT_NAME,
-        "mock_mode": settings.MOCK_MODE
+        "mock_mode": settings.MOCK_MODE,
     }
 
 
@@ -95,28 +97,17 @@ async def shutdown_event():
 @app.exception_handler(404)
 async def not_found_handler(request, exc):
     """Custom 404 handler."""
-    return {
-        "detail": "Resource not found",
-        "status_code": 404
-    }
+    return {"detail": "Resource not found", "status_code": 404}
 
 
 @app.exception_handler(500)
 async def internal_error_handler(request, exc):
     """Custom 500 handler."""
     logger.error(f"Internal server error: {str(exc)}", exc_info=True)
-    return {
-        "detail": "Internal server error. Please try again later.",
-        "status_code": 500
-    }
+    return {"detail": "Internal server error. Please try again later.", "status_code": 500}
 
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(
-        "app.main:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=True,
-        log_level="info"
-    )
+
+    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True, log_level="info")

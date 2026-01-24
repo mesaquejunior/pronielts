@@ -1,6 +1,8 @@
 """Dialog model for grouping related phrases by theme."""
+
 from sqlalchemy import Column, Integer, String, Text
 from sqlalchemy.orm import relationship
+
 from app.db.base import Base, TimestampMixin
 
 
@@ -31,7 +33,7 @@ class Dialog(Base, TimestampMixin):
         "Phrase",
         back_populates="dialog",
         cascade="all, delete-orphan",  # Delete phrases when dialog is deleted
-        lazy="select" # Load phrases only when accessed
+        lazy="select",  # Load phrases only when accessed
     )
 
     def __repr__(self) -> str:

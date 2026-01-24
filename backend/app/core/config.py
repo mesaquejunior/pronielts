@@ -2,7 +2,7 @@
 Application configuration using Pydantic Settings.
 Loads configuration from environment variables with validation.
 """
-from typing import Optional, List
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -19,9 +19,9 @@ class Settings(BaseSettings):
 
     # Azure Services (optional in mock mode)
     MOCK_MODE: bool = True
-    SPEECH_KEY: Optional[str] = None
-    SPEECH_REGION: Optional[str] = "brazilsouth"
-    BLOB_CONNECTION_STRING: Optional[str] = None
+    SPEECH_KEY: str | None = None
+    SPEECH_REGION: str | None = "brazilsouth"
+    BLOB_CONNECTION_STRING: str | None = None
     BLOB_CONTAINER_NAME: str = "audio-recordings"
 
     # Security
@@ -34,15 +34,11 @@ class Settings(BaseSettings):
     CORS_ORIGINS: str = "http://localhost:3000,http://localhost:5173,http://localhost:5174"
 
     @property
-    def cors_origins_list(self) -> List[str]:
+    def cors_origins_list(self) -> list[str]:
         """Parse CORS_ORIGINS from comma-separated string to list."""
         return [origin.strip() for origin in self.CORS_ORIGINS.split(",")]
 
-    model_config = SettingsConfigDict(
-        env_file=".env",
-        case_sensitive=True,
-        extra="ignore"
-    )
+    model_config = SettingsConfigDict(env_file=".env", case_sensitive=True, extra="ignore")
 
     def validate_azure_config(self) -> None:
         """Validate that Azure configuration is present when not in mock mode."""

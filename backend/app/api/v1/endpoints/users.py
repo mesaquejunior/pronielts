@@ -1,28 +1,29 @@
 """User endpoints for managing users and viewing progress."""
+
 import logging
-from typing import List
+
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.orm import Session
 from sqlalchemy import func
+from sqlalchemy.orm import Session
 
 from app.api.deps import get_db
-from app.models.user import User
 from app.models.assessment import Assessment
-from app.models.phrase import Phrase
 from app.models.dialog import Dialog
-from app.schemas.user import UserResponse, UserProgress
+from app.models.phrase import Phrase
+from app.models.user import User
 from app.schemas.assessment import AssessmentListItem
+from app.schemas.user import UserProgress
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
 
-@router.get("/users/{user_id}/assessments", response_model=List[AssessmentListItem])
+@router.get("/users/{user_id}/assessments", response_model=list[AssessmentListItem])
 def get_user_assessments(
     user_id: int,
     limit: int = Query(50, ge=1, le=100),
     offset: int = Query(0, ge=0),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
 ):
     """
     Get assessment history for a specific user.
@@ -54,7 +55,7 @@ def get_user_assessments(
             accuracy_score=assessment.accuracy_score,
             prosody_score=assessment.prosody_score,
             fluency_score=assessment.fluency_score,
-            created_at=assessment.created_at
+            created_at=assessment.created_at,
         )
         for assessment, phrase_text in assessments
     ]
@@ -90,7 +91,7 @@ def get_user_progress(user_id: int, db: Session = Depends(get_db)):
             func.avg(Assessment.fluency_score).label("avg_fluency"),
             func.avg(Assessment.completeness_score).label("avg_completeness"),
             func.max(Assessment.overall_score).label("best_score"),
-            func.min(Assessment.overall_score).label("worst_score")
+            func.min(Assessment.overall_score).label("worst_score"),
         )
         .filter(Assessment.user_id == user_id)
         .first()
@@ -121,7 +122,7 @@ def get_user_progress(user_id: int, db: Session = Depends(get_db)):
             best_score=0.0,
             worst_score=0.0,
             categories_practiced={},
-            improvement_rate=None
+            improvement_rate=None,
         )
 
     logger.info(f"Retrieved progress for user {user_id}: {stats.total} assessments")
@@ -137,5 +138,5 @@ def get_user_progress(user_id: int, db: Session = Depends(get_db)):
         best_score=float(stats.best_score or 0),
         worst_score=float(stats.worst_score or 0),
         categories_practiced=categories_practiced,
-        improvement_rate=None  # TODO: Calculate based on time series data
+        improvement_rate=None,  # TODO: Calculate based on time series data
     )

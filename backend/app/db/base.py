@@ -2,7 +2,9 @@
 SQLAlchemy base class and timestamp mixin.
 All models should inherit from Base.
 """
+
 from datetime import datetime
+
 from sqlalchemy import Column, DateTime
 from sqlalchemy.orm import declarative_base
 

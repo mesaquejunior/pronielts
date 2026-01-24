@@ -1,22 +1,22 @@
 """Dialog endpoints for managing conversation contexts."""
+
 import logging
-from typing import List, Optional
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db
 from app.models.dialog import Dialog
-from app.models.phrase import Phrase
-from app.schemas.dialog import DialogCreate, DialogUpdate, DialogResponse, DialogListItem
+from app.schemas.dialog import DialogCreate, DialogResponse, DialogUpdate
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
 
-@router.get("/dialogs", response_model=List[DialogResponse])
+@router.get("/dialogs", response_model=list[DialogResponse])
 def get_dialogs(
-    category: Optional[str] = Query(None, description="Filter by category"),
-    db: Session = Depends(get_db)
+    category: str | None = Query(None, description="Filter by category"),
+    db: Session = Depends(get_db),
 ):
     """
     Get all dialogs, optionally filtered by category.
@@ -54,10 +54,7 @@ def get_dialog(dialog_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/dialogs", response_model=DialogResponse, status_code=201)
-def create_dialog(
-    dialog: DialogCreate,
-    db: Session = Depends(get_db)
-):
+def create_dialog(dialog: DialogCreate, db: Session = Depends(get_db)):
     """
     Create a new dialog (Admin only - authentication to be added).
 
@@ -74,11 +71,7 @@ def create_dialog(
 
 
 @router.put("/dialogs/{dialog_id}", response_model=DialogResponse)
-def update_dialog(
-    dialog_id: int,
-    dialog_update: DialogUpdate,
-    db: Session = Depends(get_db)
-):
+def update_dialog(dialog_id: int, dialog_update: DialogUpdate, db: Session = Depends(get_db)):
     """
     Update an existing dialog (Admin only).
 

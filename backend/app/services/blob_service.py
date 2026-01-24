@@ -2,10 +2,11 @@
 Blob storage service for storing audio files.
 Supports both mock mode (local filesystem) and Azure Blob Storage.
 """
-import uuid
+
 import logging
+import uuid
 from pathlib import Path
-from typing import Optional
+
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
@@ -13,6 +14,7 @@ logger = logging.getLogger(__name__)
 # Azure Blob Storage import (optional, only needed when MOCK_MODE=false)
 try:
     from azure.storage.blob import BlobServiceClient, ContentSettings
+
     AZURE_BLOB_AVAILABLE = True
 except ImportError:
     AZURE_BLOB_AVAILABLE = False
@@ -48,9 +50,7 @@ class BlobStorageService:
     def _ensure_container_exists(self):
         """Create container if it doesn't exist (Azure mode only)."""
         try:
-            container_client = self.blob_service_client.get_container_client(
-                self.container_name
-            )
+            container_client = self.blob_service_client.get_container_client(self.container_name)
             if not container_client.exists():
                 container_client.create_container()
                 logger.info(f"Created blob container: {self.container_name}")
@@ -59,10 +59,7 @@ class BlobStorageService:
             raise
 
     async def upload_audio(
-        self,
-        audio_bytes: bytes,
-        file_extension: str = "wav",
-        user_id: Optional[str] = None
+        self, audio_bytes: bytes, file_extension: str = "wav", user_id: str | None = None
     ) -> str:
         """
         Upload audio file to storage.
@@ -83,12 +80,7 @@ class BlobStorageService:
 
         return await self._azure_upload(audio_bytes, file_extension, user_id)
 
-    def _mock_upload(
-        self,
-        audio_bytes: bytes,
-        file_extension: str,
-        user_id: Optional[str]
-    ) -> str:
+    def _mock_upload(self, audio_bytes: bytes, file_extension: str, user_id: str | None) -> str:
         """
         Save audio to local filesystem for development.
 
@@ -121,10 +113,7 @@ class BlobStorageService:
             raise Exception(f"File upload failed: {str(e)}")
 
     async def _azure_upload(
-        self,
-        audio_bytes: bytes,
-        file_extension: str,
-        user_id: Optional[str]
+        self, audio_bytes: bytes, file_extension: str, user_id: str | None
     ) -> str:
         """
         Upload audio to Azure Blob Storage.
@@ -134,6 +123,7 @@ class BlobStorageService:
         try:
             # Create unique blob name
             from datetime import datetime
+
             timestamp = datetime.utcnow().strftime("%Y%m%d")
 
             if user_id:
@@ -143,18 +133,13 @@ class BlobStorageService:
 
             # Get blob client
             blob_client = self.blob_service_client.get_blob_client(
-                container=self.container_name,
-                blob=blob_name
+                container=self.container_name, blob=blob_name
             )
 
             # Upload with appropriate content type
             content_settings = ContentSettings(content_type="audio/wav")
 
-            blob_client.upload_blob(
-                audio_bytes,
-                overwrite=True,
-                content_settings=content_settings
-            )
+            blob_client.upload_blob(audio_bytes, overwrite=True, content_settings=content_settings)
 
             # Return blob URL
             blob_url = blob_client.url
@@ -208,8 +193,7 @@ class BlobStorageService:
             blob_name = blob_url.split(f"{self.container_name}/")[-1]
 
             blob_client = self.blob_service_client.get_blob_client(
-                container=self.container_name,
-                blob=blob_name
+                container=self.container_name, blob=blob_name
             )
 
             # Download blob
@@ -263,8 +247,7 @@ class BlobStorageService:
             blob_name = blob_url.split(f"{self.container_name}/")[-1]
 
             blob_client = self.blob_service_client.get_blob_client(
-                container=self.container_name,
-                blob=blob_name
+                container=self.container_name, blob=blob_name
             )
 
             blob_client.delete_blob()

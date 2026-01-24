@@ -2,18 +2,20 @@
 Assessment endpoints for pronunciation evaluation.
 Main endpoint: POST /assess - submits audio for assessment.
 """
+
 import logging
-from fastapi import APIRouter, UploadFile, File, Form, Depends, HTTPException
+
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_db, get_speech_service, get_blob_service, get_encryption_service
+from app.api.deps import get_blob_service, get_db, get_encryption_service, get_speech_service
 from app.models.assessment import Assessment
-from app.models.user import User
 from app.models.phrase import Phrase
+from app.models.user import User
 from app.schemas.assessment import AssessmentResponse, AssessmentScores
-from app.services.speech_service import SpeechAssessmentService
 from app.services.blob_service import BlobStorageService
 from app.services.encryption_service import EncryptionService
+from app.services.speech_service import SpeechAssessmentService
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -27,7 +29,7 @@ async def create_assessment(
     db: Session = Depends(get_db),
     speech_service: SpeechAssessmentService = Depends(get_speech_service),
     blob_service: BlobStorageService = Depends(get_blob_service),
-    encryption_service: EncryptionService = Depends(get_encryption_service)
+    encryption_service: EncryptionService = Depends(get_encryption_service),
 ):
     """
     Submit audio for pronunciation assessment.
@@ -48,10 +50,7 @@ async def create_assessment(
 
     # 1. Validate audio file
     if audio.size and audio.size > 10 * 1024 * 1024:  # 10MB limit
-        raise HTTPException(
-            status_code=400,
-            detail="Audio file too large (maximum 10MB)"
-        )
+        raise HTTPException(status_code=400, detail="Audio file too large (maximum 10MB)")
 
     if audio.content_type and audio.content_type not in ["audio/wav", "audio/wave", "audio/x-wav"]:
         logger.warning(f"Unexpected content type: {audio.content_type}. Proceeding anyway.")
@@ -67,10 +66,7 @@ async def create_assessment(
     # 3. Get phrase
     phrase = db.query(Phrase).filter(Phrase.id == phrase_id).first()
     if not phrase:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Phrase with ID {phrase_id} not found"
-        )
+        raise HTTPException(status_code=404, detail=f"Phrase with ID {phrase_id} not found")
 
     # 4. Read audio bytes
     audio_bytes = await audio.read()
@@ -93,9 +89,7 @@ async def create_assessment(
         # 7. Upload to blob storage
         logger.info("Uploading to blob storage...")
         blob_url = await blob_service.upload_audio(
-            encrypted_audio,
-            file_extension="wav",
-            user_id=user_id
+            encrypted_audio, file_extension="wav", user_id=user_id
         )
 
         # 8. Save assessment to database
@@ -110,7 +104,7 @@ async def create_assessment(
             recognized_text=result.recognized_text,
             word_level_scores=result.word_level_scores,
             audio_blob_url=blob_url,
-            assessment_duration_seconds=len(audio_bytes) / 16000  # Approximate duration
+            assessment_duration_seconds=len(audio_bytes) / 16000,  # Approximate duration
         )
 
         db.add(assessment)
@@ -129,17 +123,14 @@ async def create_assessment(
                 prosody_score=assessment.prosody_score,
                 fluency_score=assessment.fluency_score,
                 completeness_score=assessment.completeness_score,
-                overall_score=assessment.overall_score
+                overall_score=assessment.overall_score,
             ),
             recognized_text=assessment.recognized_text,
             word_level_scores=assessment.word_level_scores,
-            created_at=assessment.created_at
+            created_at=assessment.created_at,
         )
 
     except Exception as e:
         db.rollback()
         logger.error(f"Assessment failed: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=500,
-            detail=f"Assessment failed: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Assessment failed: {str(e)}")

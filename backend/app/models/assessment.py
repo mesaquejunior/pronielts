@@ -1,6 +1,8 @@
 """Assessment model for storing pronunciation evaluation results."""
-from sqlalchemy import Column, Integer, String, Float, Text, ForeignKey, JSON
+
+from sqlalchemy import JSON, Column, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
+
 from app.db.base import Base, TimestampMixin
 
 
@@ -18,16 +20,10 @@ class Assessment(Base, TimestampMixin):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(
-        Integer,
-        ForeignKey("users.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
     )
     phrase_id = Column(
-        Integer,
-        ForeignKey("phrases.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True
+        Integer, ForeignKey("phrases.id", ondelete="CASCADE"), nullable=False, index=True
     )
 
     # Scores (0-100 scale, except prosody which is 0-5)
@@ -38,7 +34,9 @@ class Assessment(Base, TimestampMixin):
     overall_score = Column(Float, nullable=True, index=True)  # Aggregated score
 
     # Detailed results (stored as JSON)
-    word_level_scores = Column(JSON, nullable=True)  # {"word": {"accuracy": 85, "error_type": "None"}}
+    word_level_scores = Column(
+        JSON, nullable=True
+    )  # {"word": {"accuracy": 85, "error_type": "None"}}
     phoneme_level_scores = Column(JSON, nullable=True)  # Detailed phoneme scores (optional)
     recognized_text = Column(Text, nullable=True)  # Speech-to-text result
 
@@ -64,9 +62,9 @@ class Assessment(Base, TimestampMixin):
                 "prosody_score": self.prosody_score,
                 "fluency_score": self.fluency_score,
                 "completeness_score": self.completeness_score,
-                "overall_score": self.overall_score
+                "overall_score": self.overall_score,
             },
             "recognized_text": self.recognized_text,
             "word_level_scores": self.word_level_scores,
-            "created_at": self.created_at.isoformat() if self.created_at else None
+            "created_at": self.created_at.isoformat() if self.created_at else None,
         }

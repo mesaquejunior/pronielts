@@ -1,12 +1,14 @@
 """Phrase endpoints for managing practice sentences."""
+
 import logging
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db
-from app.models.phrase import Phrase
 from app.models.dialog import Dialog
-from app.schemas.phrase import PhraseCreate, PhraseUpdate, PhraseResponse
+from app.models.phrase import Phrase
+from app.schemas.phrase import PhraseCreate, PhraseResponse, PhraseUpdate
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -24,10 +26,7 @@ def get_phrase(phrase_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/phrases", response_model=PhraseResponse, status_code=201)
-def create_phrase(
-    phrase: PhraseCreate,
-    db: Session = Depends(get_db)
-):
+def create_phrase(phrase: PhraseCreate, db: Session = Depends(get_db)):
     """
     Create a new phrase (Admin only).
 
@@ -36,10 +35,7 @@ def create_phrase(
     # Verify dialog exists
     dialog = db.query(Dialog).filter(Dialog.id == phrase.dialog_id).first()
     if not dialog:
-        raise HTTPException(
-            status_code=404,
-            detail=f"Dialog {phrase.dialog_id} not found"
-        )
+        raise HTTPException(status_code=404, detail=f"Dialog {phrase.dialog_id} not found")
 
     db_phrase = Phrase(**phrase.model_dump())
 
@@ -52,11 +48,7 @@ def create_phrase(
 
 
 @router.put("/phrases/{phrase_id}", response_model=PhraseResponse)
-def update_phrase(
-    phrase_id: int,
-    phrase_update: PhraseUpdate,
-    db: Session = Depends(get_db)
-):
+def update_phrase(phrase_id: int, phrase_update: PhraseUpdate, db: Session = Depends(get_db)):
     """
     Update an existing phrase (Admin only).
 
