@@ -47,7 +47,7 @@ mypy:
 test:
 	poetry run pytest
 
-# Run tests with coverage report
+# Run tests with coverage report (fails below 80%)
 coverage:
-	poetry run pytest --cov=app --cov-report=term-missing --cov-report=html
+	poetry run pytest --cov=app --cov-report=term-missing --cov-report=html --cov-fail-under=80
 	@echo "\n✅ Coverage report generated at htmlcov/index.html"
