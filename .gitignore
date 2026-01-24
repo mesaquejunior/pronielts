@@ -32,6 +32,7 @@ venv.bak/
 .coverage
 htmlcov/
 mock_blob_storage/
+.python-version
 
 # Flutter/Dart
 .dart_tool/

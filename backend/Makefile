@@ -1,4 +1,4 @@
-.PHONY: linter linter-check mypy install test coverage help
+.PHONY: linter linter-check mypy install test coverage run migrate migrate-create help
 
 # Default target
 help:
@@ -9,6 +9,9 @@ help:
 	@echo "  install       - Install dependencies with Poetry"
 	@echo "  test          - Run tests with pytest"
 	@echo "  coverage      - Run tests with coverage report"
+	@echo "  run           - Run backend API server (dev mode)"
+	@echo "  migrate       - Apply database migrations (alembic upgrade head)"
+	@echo "  migrate-create - Create new migration (usage: make migrate-create msg='description')"
 
 # Install dependencies
 install:
@@ -37,6 +40,19 @@ linter-check:
 	@echo "\nChecking with deptry..."
 	poetry run deptry .
 	@echo "\n✅ All linter checks passed!"
+
+# Run backend api server
+run:
+	poetry run uvicorn app.main:app --reload
+
+# Apply database migrations
+migrate:
+	poetry run alembic upgrade head
+	@echo "\n✅ Migrations applied successfully!"
+
+# Create new migration
+migrate-create:
+	poetry run alembic revision --autogenerate -m "$(msg)"
 
 # Run type checking with mypy
 mypy:
