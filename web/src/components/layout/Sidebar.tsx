@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, MessageSquare, Users, LogOut } from 'lucide-react';
+import { LayoutDashboard, FolderOpen, MessageSquare, Users, LogOut } from 'lucide-react';
 
 interface SidebarProps {
   onLogout: () => void;
@@ -7,6 +7,7 @@ interface SidebarProps {
 
 const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/categories', icon: FolderOpen, label: 'Categories' },
   { to: '/dialogs', icon: MessageSquare, label: 'Dialogs' },
   { to: '/users', icon: Users, label: 'Users' },
 ];

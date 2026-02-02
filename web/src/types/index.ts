@@ -1,7 +1,22 @@
+export interface Category {
+  id: number;
+  name: string;
+  description: string | null;
+  dialog_count: number;
+  created_at: string;
+  updated_at: string | null;
+}
+
+export interface CategoryCreate {
+  name: string;
+  description?: string;
+}
+
 export interface Dialog {
   id: number;
   title: string;
-  category: string;
+  category_id: number;
+  category_name: string;
   difficulty_level: string;
   description: string | null;
   phrases: Phrase[];
@@ -11,7 +26,7 @@ export interface Dialog {
 
 export interface DialogCreate {
   title: string;
-  category: string;
+  category_id: number;
   difficulty_level: string;
   description?: string;
 }

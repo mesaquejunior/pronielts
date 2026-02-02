@@ -1,19 +1,19 @@
 import { useState } from 'react';
-import type { Dialog, DialogCreate } from '../../types';
+import type { Category, Dialog, DialogCreate } from '../../types';
 
-const CATEGORIES = ['IELTS_Part1', 'IELTS_Part2', 'IELTS_Part3', 'Travel', 'Academic', 'Business'];
-const DIFFICULTY_LEVELS = ['beginner', 'intermediate', 'advanced'];
+const DIFFICULTY_LEVELS = ['Beginner', 'Intermediate', 'Advanced'];
 
 interface DialogFormProps {
   dialog?: Dialog;
+  categories: Category[];
   onSubmit: (data: DialogCreate) => Promise<void>;
   onCancel: () => void;
 }
 
-export function DialogForm({ dialog, onSubmit, onCancel }: DialogFormProps) {
+export function DialogForm({ dialog, categories, onSubmit, onCancel }: DialogFormProps) {
   const [title, setTitle] = useState(dialog?.title || '');
-  const [category, setCategory] = useState(dialog?.category || CATEGORIES[0]);
-  const [difficulty, setDifficulty] = useState(dialog?.difficulty_level || DIFFICULTY_LEVELS[0]);
+  const [categoryId, setCategoryId] = useState<number>(dialog?.category_id || categories[0]?.id || 0);
+  const [difficulty, setDifficulty] = useState(dialog?.difficulty_level || DIFFICULTY_LEVELS[1]);
   const [description, setDescription] = useState(dialog?.description || '');
   const [submitting, setSubmitting] = useState(false);
 
@@ -23,7 +23,7 @@ export function DialogForm({ dialog, onSubmit, onCancel }: DialogFormProps) {
     try {
       await onSubmit({
         title,
-        category,
+        category_id: categoryId,
         difficulty_level: difficulty,
         description: description || undefined,
       });
@@ -50,12 +50,12 @@ export function DialogForm({ dialog, onSubmit, onCancel }: DialogFormProps) {
         <div>
           <label className="block text-sm font-medium text-slate-700 mb-1">Category</label>
           <select
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
+            value={categoryId}
+            onChange={(e) => setCategoryId(Number(e.target.value))}
             className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
           >
-            {CATEGORIES.map((c) => (
-              <option key={c} value={c}>{c.replace('_', ' ')}</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>{c.name.replace('_', ' ')}</option>
             ))}
           </select>
         </div>
@@ -68,7 +68,7 @@ export function DialogForm({ dialog, onSubmit, onCancel }: DialogFormProps) {
             className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
           >
             {DIFFICULTY_LEVELS.map((d) => (
-              <option key={d} value={d}>{d.charAt(0).toUpperCase() + d.slice(1)}</option>
+              <option key={d} value={d}>{d}</option>
             ))}
           </select>
         </div>

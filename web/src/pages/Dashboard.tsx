@@ -28,7 +28,7 @@ export function Dashboard() {
   }, []);
 
   const totalPhrases = dialogs.reduce((acc, d) => acc + (d.phrases?.length || 0), 0);
-  const categories = [...new Set(dialogs.map((d) => d.category))];
+  const categories = [...new Set(dialogs.map((d) => d.category_name))];
 
   if (loading) {
     return (
@@ -78,7 +78,7 @@ export function Dashboard() {
           <h2 className="text-lg font-semibold text-slate-900 mb-4">Dialogs by Category</h2>
           <div className="space-y-3">
             {categories.map((cat) => {
-              const count = dialogs.filter((d) => d.category === cat).length;
+              const count = dialogs.filter((d) => d.category_name === cat).length;
               const pct = Math.round((count / dialogs.length) * 100);
               return (
                 <div key={cat}>
@@ -105,7 +105,7 @@ export function Dashboard() {
               <div key={dialog.id} className="flex items-center justify-between py-2 border-b border-slate-100 last:border-0">
                 <div>
                   <p className="text-sm font-medium text-slate-900">{dialog.title}</p>
-                  <p className="text-xs text-slate-500">{dialog.category.replace('_', ' ')} - {dialog.difficulty_level}</p>
+                  <p className="text-xs text-slate-500">{dialog.category_name.replace('_', ' ')} - {dialog.difficulty_level}</p>
                 </div>
                 <span className="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded">
                   {dialog.phrases?.length || 0} phrases

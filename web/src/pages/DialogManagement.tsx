@@ -1,17 +1,20 @@
 import { useState } from 'react';
 import { Plus, Edit2, Trash2, ChevronDown, ChevronRight } from 'lucide-react';
 import { useDialogs } from '../hooks/useDialogs';
+import { useCategories } from '../hooks/useCategories';
 import { DialogForm } from '../components/dialogs/DialogForm';
 import { PhraseForm } from '../components/dialogs/PhraseForm';
-import type { Dialog, DialogCreate, PhraseCreate } from '../types';
+import type { Dialog, DialogCreate, Phrase, PhraseCreate } from '../types';
 import * as api from '../services/api';
 
 export function DialogManagement() {
   const { dialogs, loading, error, addDialog, editDialog, removeDialog, fetchDialogs } = useDialogs();
+  const { categories, loading: categoriesLoading } = useCategories();
   const [showForm, setShowForm] = useState(false);
   const [editingDialog, setEditingDialog] = useState<Dialog | null>(null);
   const [expandedDialog, setExpandedDialog] = useState<number | null>(null);
   const [addingPhraseTo, setAddingPhraseTo] = useState<number | null>(null);
+  const [editingPhrase, setEditingPhrase] = useState<Phrase | null>(null);
 
   const handleCreateDialog = async (data: DialogCreate) => {
     await addDialog(data);
@@ -37,6 +40,14 @@ export function DialogManagement() {
     fetchDialogs();
   };
 
+  const handleEditPhrase = async (data: PhraseCreate) => {
+    if (editingPhrase) {
+      await api.updatePhrase(editingPhrase.id, data);
+      setEditingPhrase(null);
+      fetchDialogs();
+    }
+  };
+
   const handleDeletePhrase = async (phraseId: number) => {
     if (confirm('Delete this phrase?')) {
       await api.deletePhrase(phraseId);
@@ -44,7 +55,7 @@ export function DialogManagement() {
     }
   };
 
-  if (loading) {
+  if (loading || categoriesLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-slate-500">Loading dialogs...</div>
@@ -83,6 +94,7 @@ export function DialogManagement() {
           </h2>
           <DialogForm
             dialog={editingDialog || undefined}
+            categories={categories}
             onSubmit={editingDialog ? handleEditDialog : handleCreateDialog}
             onCancel={() => { setShowForm(false); setEditingDialog(null); }}
           />
@@ -105,7 +117,7 @@ export function DialogManagement() {
                 <div>
                   <h3 className="font-medium text-slate-900">{dialog.title}</h3>
                   <p className="text-sm text-slate-500">
-                    {dialog.category.replace('_', ' ')} - {dialog.difficulty_level} - {dialog.phrases?.length || 0} phrases
+                    {dialog.category_name.replace('_', ' ')} - {dialog.difficulty_level} - {dialog.phrases?.length || 0} phrases
                   </p>
                 </div>
               </button>
@@ -150,6 +162,18 @@ export function DialogManagement() {
                   </div>
                 )}
 
+                {editingPhrase && editingPhrase.dialog_id === dialog.id && (
+                  <div className="mb-4">
+                    <h5 className="text-sm font-medium text-slate-600 mb-2">Edit Phrase</h5>
+                    <PhraseForm
+                      dialogId={dialog.id}
+                      phrase={editingPhrase}
+                      onSubmit={handleEditPhrase}
+                      onCancel={() => setEditingPhrase(null)}
+                    />
+                  </div>
+                )}
+
                 {dialog.phrases && dialog.phrases.length > 0 ? (
                   <div className="space-y-2">
                     {dialog.phrases.map((phrase, idx) => (
@@ -158,18 +182,30 @@ export function DialogManagement() {
                           <span className="text-xs text-slate-400 font-mono w-6">{idx + 1}.</span>
                           <div>
                             <p className="text-sm text-slate-900">{phrase.reference_text}</p>
-                            {phrase.phonetic_transcription && (
-                              <p className="text-xs text-slate-500 italic">{phrase.phonetic_transcription}</p>
-                            )}
+                            <div className="flex gap-2 text-xs text-slate-500">
+                              <span className="bg-slate-200 px-1.5 py-0.5 rounded">{phrase.difficulty}</span>
+                              {phrase.phonetic_transcription && (
+                                <span className="italic">{phrase.phonetic_transcription}</span>
+                              )}
+                            </div>
                           </div>
                         </div>
-                        <button
-                          onClick={() => handleDeletePhrase(phrase.id)}
-                          className="p-1.5 text-slate-400 hover:text-red-600 rounded hover:bg-red-50"
-                          title="Delete phrase"
-                        >
-                          <Trash2 size={14} />
-                        </button>
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => setEditingPhrase(phrase)}
+                            className="p-1.5 text-slate-400 hover:text-blue-600 rounded hover:bg-blue-50"
+                            title="Edit phrase"
+                          >
+                            <Edit2 size={14} />
+                          </button>
+                          <button
+                            onClick={() => handleDeletePhrase(phrase.id)}
+                            className="p-1.5 text-slate-400 hover:text-red-600 rounded hover:bg-red-50"
+                            title="Delete phrase"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>

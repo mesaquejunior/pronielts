@@ -3,6 +3,7 @@ import { useAuth } from './hooks/useAuth';
 import { Sidebar } from './components/layout/Sidebar';
 import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
+import { CategoryManagement } from './pages/CategoryManagement';
 import { DialogManagement } from './pages/DialogManagement';
 import { UserManagement } from './pages/UserManagement';
 
@@ -15,6 +16,7 @@ function AppLayout() {
       <main className="flex-1 p-8">
         <Routes>
           <Route path="/" element={<Dashboard />} />
+          <Route path="/categories" element={<CategoryManagement />} />
           <Route path="/dialogs" element={<DialogManagement />} />
           <Route path="/users" element={<UserManagement />} />
           <Route path="*" element={<Navigate to="/" replace />} />

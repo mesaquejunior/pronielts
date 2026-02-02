@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { Dialog, DialogCreate, Phrase, PhraseCreate, Assessment, UserProgress, HealthCheck } from '../types';
+import type { Category, CategoryCreate, Dialog, DialogCreate, Phrase, PhraseCreate, Assessment, UserProgress, HealthCheck } from '../types';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api/v1';
 
@@ -14,9 +14,27 @@ const api = axios.create({
 export const getHealth = () =>
   api.get<HealthCheck>('/health', { baseURL: import.meta.env.VITE_API_URL?.replace('/api/v1', '') || '' });
 
+// Categories
+export const getCategories = () =>
+  api.get<Category[]>('/categories');
+
+export const getCategory = (id: number) =>
+  api.get<Category>(`/categories/${id}`);
+
+export const createCategory = (data: CategoryCreate) =>
+  api.post<Category>('/categories', data);
+
+export const updateCategory = (id: number, data: Partial<CategoryCreate>) =>
+  api.put<Category>(`/categories/${id}`, data);
+
+export const deleteCategory = (id: number) =>
+  api.delete(`/categories/${id}`);
+
 // Dialogs
-export const getDialogs = () =>
-  api.get<Dialog[]>('/dialogs');
+export const getDialogs = (categoryId?: number) => {
+  const params = categoryId ? { category_id: categoryId } : {};
+  return api.get<Dialog[]>('/dialogs', { params });
+};
 
 export const getDialog = (id: number) =>
   api.get<Dialog>(`/dialogs/${id}`);
