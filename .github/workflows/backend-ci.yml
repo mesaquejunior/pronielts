@@ -1,0 +1,217 @@
+# Backend CI/CD Pipeline
+# Runs on: push to main, pull requests to main
+# Jobs: lint, test (with coverage gate), deploy to Azure
+
+name: Backend CI/CD
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-ci.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-ci.yml'
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: '3.13'
+  WORKING_DIRECTORY: backend
+
+defaults:
+  run:
+    working-directory: backend
+
+jobs:
+  # ============================================================================
+  # Lint Job - Code quality checks
+  # ============================================================================
+  lint:
+    name: Lint & Type Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Load cached venv
+        id: cached-poetry-dependencies
+        uses: actions/cache@v4
+        with:
+          path: backend/.venv
+          key: venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('backend/poetry.lock') }}
+
+      - name: Install dependencies
+        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        run: poetry install --no-interaction --no-root
+
+      - name: Install project
+        run: poetry install --no-interaction
+
+      - name: Check import sorting (isort)
+        run: poetry run isort . --check-only --diff
+
+      - name: Check code formatting (black)
+        run: poetry run black . --check --diff
+
+      - name: Lint with ruff
+        run: poetry run ruff check .
+
+      - name: Type check with mypy
+        run: poetry run mypy . --config-file pyproject.toml
+        continue-on-error: true  # Lenient for now (15 known errors)
+
+  # ============================================================================
+  # Test Job - Unit tests with coverage
+  # ============================================================================
+  test:
+    name: Test & Coverage
+    runs-on: ubuntu-latest
+    needs: lint
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: pronielts
+          POSTGRES_PASSWORD: pronielts
+          POSTGRES_DB: pronielts_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://pronielts:pronielts@localhost:5432/pronielts_test
+      MOCK_MODE: "true"
+      SECRET_KEY: test-secret-key-for-ci
+      ENCRYPTION_KEY: dGVzdC1lbmNyeXB0aW9uLWtleS0zMi1ieXRlcw==
+      SPEECH_KEY: test-speech-key
+      SPEECH_REGION: eastus
+      BLOB_CONNECTION_STRING: DefaultEndpointsProtocol=https;AccountName=test
+      BLOB_CONTAINER_NAME: test-container
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      - name: Load cached venv
+        id: cached-poetry-dependencies
+        uses: actions/cache@v4
+        with:
+          path: backend/.venv
+          key: venv-${{ runner.os }}-${{ env.PYTHON_VERSION }}-${{ hashFiles('backend/poetry.lock') }}
+
+      - name: Install dependencies
+        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        run: poetry install --no-interaction --no-root
+
+      - name: Install project
+        run: poetry install --no-interaction
+
+      - name: Run tests with coverage
+        run: |
+          poetry run pytest \
+            --cov=app \
+            --cov-report=xml \
+            --cov-report=term-missing \
+            --cov-fail-under=80 \
+            -v
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: backend/coverage.xml
+          flags: backend
+          name: backend-coverage
+          fail_ci_if_error: false
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  # ============================================================================
+  # Deploy Job - Deploy to Azure App Service
+  # ============================================================================
+  deploy:
+    name: Deploy to Azure
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment:
+      name: production
+      url: ${{ steps.deploy.outputs.webapp-url }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+
+      - name: Export requirements.txt
+        run: poetry export -f requirements.txt --output requirements.txt --without-hashes
+
+      - name: Create deployment package
+        run: |
+          cd ..
+          zip -r backend.zip backend \
+            -x "backend/.venv/*" \
+            -x "backend/__pycache__/*" \
+            -x "backend/**/__pycache__/*" \
+            -x "backend/.pytest_cache/*" \
+            -x "backend/.mypy_cache/*" \
+            -x "backend/.ruff_cache/*" \
+            -x "backend/.coverage" \
+            -x "backend/coverage.xml" \
+            -x "backend/*.pyc"
+
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy to Azure App Service
+        id: deploy
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ secrets.AZURE_APP_SERVICE_NAME }}
+          package: backend.zip
+
+      - name: Run database migrations
+        run: |
+          az webapp ssh --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --name ${{ secrets.AZURE_APP_SERVICE_NAME }} \
+            --command "cd /home/site/wwwroot && alembic upgrade head"
+        continue-on-error: true

@@ -1,0 +1,79 @@
+# Terraform State Storage Setup
+# ONE-TIME workflow to create Azure Storage Account for Terraform state
+# Run this ONCE before using infrastructure-deploy.yml
+
+name: Terraform State Setup
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Action to perform'
+        required: true
+        default: 'plan'
+        type: choice
+        options:
+          - plan
+          - apply
+
+env:
+  TF_VERSION: '1.5.7'
+  ARM_CLIENT_ID: ${{ secrets.ARM_CLIENT_ID }}
+  ARM_CLIENT_SECRET: ${{ secrets.ARM_CLIENT_SECRET }}
+  ARM_SUBSCRIPTION_ID: ${{ secrets.ARM_SUBSCRIPTION_ID }}
+  ARM_TENANT_ID: ${{ secrets.ARM_TENANT_ID }}
+
+jobs:
+  setup-state-storage:
+    name: Setup Terraform State Storage
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Terraform Init
+        run: terraform init
+        working-directory: infrastructure/terraform/shared/backend-setup
+
+      - name: Terraform Validate
+        run: terraform validate
+        working-directory: infrastructure/terraform/shared/backend-setup
+
+      - name: Terraform Plan
+        if: inputs.action == 'plan'
+        run: |
+          terraform plan \
+            -var="resource_group_name=rg-pronielts-tfstate" \
+            -var="storage_account_name=stpronieltstfstate" \
+            -var="location=brazilsouth" \
+            -no-color
+        working-directory: infrastructure/terraform/shared/backend-setup
+
+      - name: Terraform Apply
+        if: inputs.action == 'apply'
+        run: |
+          terraform apply \
+            -var="resource_group_name=rg-pronielts-tfstate" \
+            -var="storage_account_name=stpronieltstfstate" \
+            -var="location=brazilsouth" \
+            -auto-approve \
+            -no-color
+        working-directory: infrastructure/terraform/shared/backend-setup
+
+      - name: Output State Storage Info
+        if: inputs.action == 'apply'
+        run: |
+          echo "## Terraform State Storage Created" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Setting | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Resource Group | rg-pronielts-tfstate |" >> $GITHUB_STEP_SUMMARY
+          echo "| Storage Account | stpronieltstfstate |" >> $GITHUB_STEP_SUMMARY
+          echo "| Container | tfstate |" >> $GITHUB_STEP_SUMMARY
+          echo "| Region | brazilsouth |" >> $GITHUB_STEP_SUMMARY
