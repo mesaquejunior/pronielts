@@ -36,7 +36,7 @@ export function Login({ onLogin }: LoginProps) {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="admin@pronielts.com"
+                placeholder="Enter your email"
               />
             </div>
 
@@ -64,10 +64,12 @@ export function Login({ onLogin }: LoginProps) {
             </button>
           </form>
 
-          <div className="mt-6 p-4 bg-slate-50 rounded-lg">
-            <p className="text-xs text-slate-500 font-medium mb-1">Demo credentials:</p>
-            <p className="text-xs text-slate-600">admin@pronielts.com / admin123</p>
-          </div>
+{import.meta.env.DEV && (
+            <div className="mt-6 p-4 bg-slate-50 rounded-lg">
+              <p className="text-xs text-slate-500 font-medium mb-1">Demo credentials:</p>
+              <p className="text-xs text-slate-600">admin@pronielts.com / admin123</p>
+            </div>
+          )}
         </div>
       </div>
     </div>
