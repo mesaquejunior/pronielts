@@ -147,6 +147,7 @@ module "app_service" {
   health_check_path = "/health"
 
   key_vault_id           = module.key_vault.id
+  enable_key_vault       = true
   key_vault_rbac_enabled = true
 
   cors_allowed_origins = [

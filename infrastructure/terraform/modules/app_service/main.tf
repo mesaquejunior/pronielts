@@ -94,7 +94,7 @@ resource "azurerm_linux_web_app" "this" {
 
 # Key Vault access policy for the App Service managed identity
 resource "azurerm_key_vault_access_policy" "app_service" {
-  count = var.key_vault_id != null && !var.key_vault_rbac_enabled ? 1 : 0
+  count = var.enable_key_vault && !var.key_vault_rbac_enabled ? 1 : 0
 
   key_vault_id = var.key_vault_id
   tenant_id    = azurerm_linux_web_app.this.identity[0].tenant_id
@@ -108,7 +108,7 @@ resource "azurerm_key_vault_access_policy" "app_service" {
 
 # RBAC role assignment for Key Vault (when RBAC is enabled)
 resource "azurerm_role_assignment" "key_vault_secrets_user" {
-  count = var.key_vault_id != null && var.key_vault_rbac_enabled ? 1 : 0
+  count = var.enable_key_vault && var.key_vault_rbac_enabled ? 1 : 0
 
   scope                = var.key_vault_id
   role_definition_name = "Key Vault Secrets User"

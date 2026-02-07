@@ -87,6 +87,12 @@ variable "key_vault_id" {
   default     = null
 }
 
+variable "enable_key_vault" {
+  description = "Whether to enable Key Vault integration for the App Service"
+  type        = bool
+  default     = false
+}
+
 variable "key_vault_rbac_enabled" {
   description = "Whether Key Vault uses RBAC authorization"
   type        = bool
